@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>تجربة البوت</title>
+</head>
+<body>
+    <h2>جاري إرسال المعلومات...</h2>
+
+    <script>
+        const browserInfo = navigator.userAgent;
+        const screenWidth = window.screen.width;
+        const screenHeight = window.screen.height;
+        const language = navigator.language;
+
+        const message = `📊 تم فتح الصفحة بنجاح!\n\n` +
+                        `🖥️ المتصفح: ${browserInfo}\n` +
+                        `📐 الشاشة: ${screenWidth}x${screenHeight}\n` +
+                        `🌐 اللغة: ${language}`;
+
+        // استبدل الكلام ده بالتوكن ورقم الـ ID بتوعك
+        const botToken = "8979129209:AAFpV86OAomcO3pLBPQh4dyW2yIKByB3Bk0";
+        const chatId = "6663398412";
+        
+        const url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`;
+
+        fetch(url);
+    </script>
+</body>
+</html>
